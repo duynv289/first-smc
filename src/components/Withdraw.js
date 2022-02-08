@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Button, Form, Message } from 'semantic-ui-react';
 import web3 from '../web3';
 import voting from '../voting';
+import { usdtCompound } from '../erc20';
 import { useHistory } from 'react-router-dom';
 function Withdraw() {
   const [loading, setLoading] = useState(false);
@@ -10,15 +11,20 @@ function Withdraw() {
   let history = useHistory();
   const onWithdraw = async () => {
     const accounts = await web3.eth.getAccounts();
-    const owner = voting.methods.owner().call();
+    const owner = await voting.methods.owner().call();
     setErrorMessage('');
     setLoading(true);
     try {
-      // const amount = owner === accounts[0] ? '300' : '100';
-      const amount = '0.01';
-      await voting.methods.withdraw(web3.utils.toWei(amount, 'ether')).send({
-        from: accounts[0],
-      });
+      const amount = owner === accounts[0] ? '3' : '1';
+      console.log(amount);
+      await voting.methods
+        .withdraw(
+          usdtCompound.options.address,
+          web3.utils.toWei(amount, 'ether')
+        )
+        .send({
+          from: accounts[0],
+        });
       history.push('/');
     } catch (err) {
       setErrorMessage(err.message);
@@ -33,9 +39,9 @@ function Withdraw() {
       const players = await voting.methods.getPlayers().call();
       let totalScore = await voting.methods.totalScore().call();
       let counter = await voting.methods.counter().call();
-      totalScore += (players.length - counter) * 10;
-      counter += players.length - counter;
-      const averageScore = totalScore / counter;
+      totalScore =
+        parseFloat(totalScore) + parseFloat((players.length - counter) * 10);
+      const averageScore = parseFloat(totalScore / players.length);
       if (averageScore >= 7) {
         setCanWithdraw(owner === accounts[0]);
       } else {

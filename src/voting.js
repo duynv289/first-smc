@@ -1,17 +1,8 @@
 import web3 from './web3';
 
-const address = '0xa5E62626510310A019a8DA203d10bb50fd168E34';
+const address = '0x43A5281f7825f4029990A049e92cd6571D1000A0';
 
 const abi = [
-  {
-    constant: false,
-    inputs: [{ name: 'amount', type: 'uint256' }],
-    name: 'withdraw',
-    outputs: [],
-    payable: false,
-    stateMutability: 'nonpayable',
-    type: 'function',
-  },
   {
     constant: true,
     inputs: [],
@@ -25,6 +16,18 @@ const abi = [
     constant: false,
     inputs: [{ name: 'score', type: 'uint256' }],
     name: 'voteScore',
+    outputs: [],
+    payable: false,
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    constant: false,
+    inputs: [
+      { name: 'erc20', type: 'address' },
+      { name: 'amount', type: 'uint256' },
+    ],
+    name: 'contribute',
     outputs: [],
     payable: false,
     stateMutability: 'nonpayable',
@@ -78,10 +81,22 @@ const abi = [
   {
     constant: false,
     inputs: [],
-    name: 'contribute',
+    name: 'reset',
     outputs: [],
-    payable: true,
-    stateMutability: 'payable',
+    payable: false,
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    constant: false,
+    inputs: [
+      { name: 'erc20', type: 'address' },
+      { name: 'amount', type: 'uint256' },
+    ],
+    name: 'withdraw',
+    outputs: [],
+    payable: false,
+    stateMutability: 'nonpayable',
     type: 'function',
   },
   {
@@ -99,7 +114,6 @@ const abi = [
     stateMutability: 'nonpayable',
     type: 'constructor',
   },
-  { anonymous: false, inputs: [], name: 'Start', type: 'event' },
 ];
 
 export default new web3.eth.Contract(abi, address);

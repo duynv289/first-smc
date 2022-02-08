@@ -9,7 +9,7 @@ function Vote() {
   const [score, setScore] = useState('');
   const [loading, setLoading] = useState(false);
   const [isVote, setIsVote] = useState(false);
-  const [timeCounter, setTimeCounter] = useState('');
+  const [isJoin, setIsJoin] = useState(false);
   const [minutes, setMinutes] = useState(0);
   const [seconds, setSeconds] = useState(0);
   let history = useHistory();
@@ -18,7 +18,6 @@ function Vote() {
       .checkCounterTime()
       .call()
       .then((timer) => {
-        console.log(timer);
         setMinutes(parseInt(timer / 60));
         setSeconds(parseInt(timer % 60));
       });
@@ -28,10 +27,12 @@ function Vote() {
     async function prepair() {
       const accounts = await web3.eth.getAccounts();
       const isJoin = await voting.methods.allowed(accounts[0]).call();
-      console.log(isJoin);
-      if (!isJoin) {
-        history.push('/');
-      }
+      setIsJoin(isJoin);
+      // if (!isJoin) {
+      //   history.push('/');
+      // }
+      const isVote = await voting.methods.voted(accounts[0]).call();
+      setIsVote(isVote);
     }
     prepair();
     getTimeCounter();
@@ -96,7 +97,7 @@ function Vote() {
         />
       ) : null}
 
-      {!isVote ? (
+      {isJoin && !isVote ? (
         <Button style={{ marginLeft: '10px' }} loading={loading} primary>
           Vote!
         </Button>

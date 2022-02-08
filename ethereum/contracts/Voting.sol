@@ -1,8 +1,36 @@
 pragma solidity ^0.4.17;
 
-contract Voting {
-    event Start();
+interface IERC20 {
+    function totalSupply() external view returns (uint256);
 
+    function balanceOf(address account) external view returns (uint256);
+
+    function allowance(address owner, address spender)
+        external
+        view
+        returns (uint256);
+
+    function transfer(address recipient, uint256 amount)
+        external
+        returns (bool);
+
+    function approve(address spender, uint256 amount) external returns (bool);
+
+    function transferFrom(
+        address sender,
+        address recipient,
+        uint256 amount
+    ) external returns (bool);
+
+    event Transfer(address indexed from, address indexed to, uint256 value);
+    event Approval(
+        address indexed owner,
+        address indexed spender,
+        uint256 value
+    );
+}
+
+contract Voting {
     address public owner;
     address[] players;
     uint256 public totalScore;
@@ -16,18 +44,18 @@ contract Voting {
     }
 
     modifier restricted() {
-        require(msg.sender == owner);
+        require(allowed[msg.sender] || msg.sender == owner);
         _;
     }
 
-    function contribute() public payable {
-        require(players.length < 1);
+    function contribute(IERC20 erc20, uint256 amount) public {
+        require(players.length < 3);
         require(!allowed[msg.sender]);
         allowed[msg.sender] = true;
+        erc20.transferFrom(msg.sender, address(this), amount);
         players.push(msg.sender);
-        if (players.length == 1) {
+        if (players.length == 3) {
             timer = block.timestamp;
-            Start();
         }
     }
 
@@ -53,10 +81,13 @@ contract Voting {
         }
     }
 
-    function withdraw(uint256 amount) public restricted {
-        require(allowed[msg.sender]);
-        msg.sender.transfer(amount);
-        for (uint256 i = 0; i < 1; i++) {
+    function withdraw(IERC20 erc20, uint256 amount) public restricted {
+        erc20.transfer(msg.sender, amount);
+    }
+
+    function reset() public {
+        require(msg.sender == owner);
+        for (uint256 i = 0; i < 3; i++) {
             allowed[players[i]] = false;
             voted[players[i]] = false;
         }

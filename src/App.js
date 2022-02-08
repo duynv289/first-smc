@@ -5,16 +5,34 @@ import Deposit from './components/Deposit';
 import Vote from './components/Vote';
 import Withdraw from './components/Withdraw';
 import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
+import voting from './voting';
 
-export const REQUIRED_NUMBER_PLAYER = 1;
+export const REQUIRED_NUMBER_PLAYER = 3;
 
 function App() {
   const [selectedAccount, setSelectedAccount] = useState('');
+  const [isOwner, setIsOwner] = useState(false);
+  const [loading, setLoading] = useState(false);
   useEffect(() => {
-    web3.eth.getAccounts().then((accounts) => {
+    async function prepair() {
+      const accounts = await web3.eth.getAccounts();
       setSelectedAccount(accounts[0]);
-    });
+      const owner = await voting.methods.owner().call();
+      setIsOwner(accounts[0] === owner);
+    }
+    prepair();
   });
+
+  const onClickReset = async () => {
+    const accounts = await web3.eth.getAccounts();
+    setLoading(true);
+    try {
+      await voting.methods.reset().send({
+        from: accounts[0],
+      });
+    } catch (err) {}
+    setLoading(false);
+  };
 
   return (
     <Container>
@@ -38,6 +56,16 @@ function App() {
             <Button disabled={selectedAccount !== ''}>
               {selectedAccount === '' ? 'Connect Wallet' : selectedAccount}
             </Button>
+            {isOwner ? (
+              <Button
+                loading={loading}
+                onClick={onClickReset}
+                primary
+                style={{ marginTop: '15px' }}
+              >
+                Reset!
+              </Button>
+            ) : null}
           </Grid.Column>
         </Grid.Row>
       </Grid>
