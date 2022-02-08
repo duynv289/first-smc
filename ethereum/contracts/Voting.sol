@@ -60,7 +60,7 @@ contract Voting {
     }
 
     function voteScore(uint256 score) public {
-        require(block.timestamp - timer <= 60);
+        require(block.timestamp - timer <= 7 * 24 * 60 * 60);
         require(allowed[msg.sender]);
         require(!voted[msg.sender]);
         voted[msg.sender] = true;
@@ -74,8 +74,8 @@ contract Voting {
     }
 
     function checkCounterTime() public view returns (uint256) {
-        if (60 > block.timestamp - timer) {
-            return 60 - (block.timestamp - timer);
+        if (7 * 24 * 60 * 60 > block.timestamp - timer) {
+            return 7 * 24 * 60 * 60 - (block.timestamp - timer);
         } else {
             return 0;
         }

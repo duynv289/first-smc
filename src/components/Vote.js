@@ -10,16 +10,15 @@ function Vote() {
   const [loading, setLoading] = useState(false);
   const [isVote, setIsVote] = useState(false);
   const [isJoin, setIsJoin] = useState(false);
-  const [minutes, setMinutes] = useState(0);
-  const [seconds, setSeconds] = useState(0);
+  const [timer, setTimer] = useState(0);
+
   let history = useHistory();
   const getTimeCounter = () => {
     voting.methods
       .checkCounterTime()
       .call()
       .then((timer) => {
-        setMinutes(parseInt(timer / 60));
-        setSeconds(parseInt(timer % 60));
+        setTimer(timer);
       });
   };
 
@@ -28,9 +27,6 @@ function Vote() {
       const accounts = await web3.eth.getAccounts();
       const isJoin = await voting.methods.allowed(accounts[0]).call();
       setIsJoin(isJoin);
-      // if (!isJoin) {
-      //   history.push('/');
-      // }
       const isVote = await voting.methods.voted(accounts[0]).call();
       setIsVote(isVote);
     }
@@ -40,23 +36,31 @@ function Vote() {
 
   useEffect(() => {
     let myInterval = setInterval(() => {
-      if (seconds > 0) {
-        setSeconds(seconds - 1);
-      }
-      if (seconds === 0) {
-        if (minutes === 0) {
-          clearInterval(myInterval);
-          history.push('/withdraw');
-        } else {
-          setMinutes(minutes - 1);
-          setSeconds(59);
-        }
+      if (timer === 0) {
+        clearInterval(myInterval);
+        history.push('/withdraw');
+      } else if (timer > 0) {
+        setTimer(timer - 1);
       }
     }, 1000);
     return () => {
       clearInterval(myInterval);
     };
   });
+
+  const renderTimer = () => {
+    var days = Math.floor(timer / 86400);
+    var hours = Math.floor((timer - days * 86400) / 3600);
+    var minutes = Math.floor((timer - days * 86400 - hours * 3600) / 60);
+    var seconds = timer - days * 86400 - hours * 3600 - minutes * 60;
+    return (
+      <p>
+        {days}:{hours < 10 ? `0${hours}` : hours}:
+        {minutes < 10 ? `0${minutes}` : minutes}:
+        {seconds < 10 ? `0${seconds}` : seconds}
+      </p>
+    );
+  };
 
   const onVote = async (event) => {
     event.preventDefault();
@@ -82,9 +86,7 @@ function Vote() {
         />
       ) : (
         <Message info>
-          <Message.Header>
-            {minutes}:{seconds < 10 ? `0${seconds}` : seconds}
-          </Message.Header>
+          <Message.Header>{renderTimer()}</Message.Header>
           <p>Please mark score before timeup</p>
         </Message>
       )}
