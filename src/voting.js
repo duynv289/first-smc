@@ -1,8 +1,35 @@
 import web3 from './web3';
 
-const address = '0x11B2aD2fd428A17BDa2e49c75121d759D224ad77';
+const address = '0x2c9A92B3EC46380785FA817c68f5e72622FA098D';
 
 const abi = [
+  {
+    constant: true,
+    inputs: [],
+    name: 'getAvarageScore',
+    outputs: [{ name: '', type: 'uint256' }],
+    payable: false,
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    constant: false,
+    inputs: [],
+    name: 'withdraw',
+    outputs: [{ name: '', type: 'bool' }],
+    payable: false,
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    constant: true,
+    inputs: [{ name: '', type: 'address' }],
+    name: 'withdrawed',
+    outputs: [{ name: '', type: 'bool' }],
+    payable: false,
+    stateMutability: 'view',
+    type: 'function',
+  },
   {
     constant: true,
     inputs: [],
@@ -16,18 +43,6 @@ const abi = [
     constant: false,
     inputs: [{ name: 'score', type: 'uint256' }],
     name: 'voteScore',
-    outputs: [],
-    payable: false,
-    stateMutability: 'nonpayable',
-    type: 'function',
-  },
-  {
-    constant: false,
-    inputs: [
-      { name: 'erc20', type: 'address' },
-      { name: 'amount', type: 'uint256' },
-    ],
-    name: 'contribute',
     outputs: [],
     payable: false,
     stateMutability: 'nonpayable',
@@ -81,19 +96,7 @@ const abi = [
   {
     constant: false,
     inputs: [],
-    name: 'reset',
-    outputs: [],
-    payable: false,
-    stateMutability: 'nonpayable',
-    type: 'function',
-  },
-  {
-    constant: false,
-    inputs: [
-      { name: 'erc20', type: 'address' },
-      { name: 'amount', type: 'uint256' },
-    ],
-    name: 'withdraw',
+    name: 'contribute',
     outputs: [],
     payable: false,
     stateMutability: 'nonpayable',
@@ -115,5 +118,4 @@ const abi = [
     type: 'constructor',
   },
 ];
-
 export default new web3.eth.Contract(abi, address);

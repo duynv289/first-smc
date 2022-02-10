@@ -9,6 +9,7 @@ import { useHistory } from 'react-router-dom';
 function Deposit() {
   const [players, setPlayers] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [timer, setTimer] = useState(0);
   const [loading, setLoading] = useState(false);
   const [isDeposit, setIsDeposit] = useState(false);
   const [isApprove, setIsApprove] = useState(false);
@@ -19,6 +20,7 @@ function Deposit() {
   const onApprove = async (event) => {
     event.preventDefault();
     const accounts = await web3.eth.getAccounts();
+    setErrorMessage('');
     setLoading(true);
     try {
       const isSuccess = await usdtCompound.methods
@@ -36,16 +38,12 @@ function Deposit() {
   const onDeposit = async (event) => {
     event.preventDefault();
     const accounts = await web3.eth.getAccounts();
+    setErrorMessage('');
     setLoading(true);
     try {
-      await voting.methods
-        .contribute(
-          usdtCompound.options.address,
-          web3.utils.toWei('1', 'ether')
-        )
-        .send({
-          from: accounts[0],
-        });
+      await voting.methods.contribute().send({
+        from: accounts[0],
+      });
       setIsDeposit(true);
       getPlayers();
     } catch (err) {
@@ -54,18 +52,32 @@ function Deposit() {
     setLoading(false);
   };
 
+  const getTimeCounter = () => {
+    voting.methods
+      .checkCounterTime()
+      .call()
+      .then((timer) => {
+        setTimer(timer);
+        checkGotoVote();
+      });
+  };
+
   const getPlayers = () => {
     voting.methods
       .getPlayers()
       .call()
       .then((players) => {
         setPlayers(players.length);
-        if (players.length === REQUIRED_NUMBER_PLAYER) {
-          history.push('/vote');
-        }
+        checkGotoVote();
       });
   };
-
+  const checkGotoVote = () => {
+    console.log(timer);
+    console.log(players);
+    if (parseInt(timer) !== 0 && players === REQUIRED_NUMBER_PLAYER) {
+      history.push('/vote');
+    }
+  };
   useEffect(() => {
     async function prepair() {
       const accounts = await web3.eth.getAccounts();
@@ -76,6 +88,7 @@ function Deposit() {
         .call();
       setIsApprove(amoutApprove !== '0');
     }
+    getTimeCounter();
     getPlayers();
     prepair();
   });
@@ -96,7 +109,11 @@ function Deposit() {
       <Message
         success
         header='Your registration was successful'
-        content={`Please wait ${REQUIRED_NUMBER_PLAYER - players} guys`}
+        content={
+          REQUIRED_NUMBER_PLAYER - players
+            ? `Please wait ${REQUIRED_NUMBER_PLAYER - players} guys`
+            : ''
+        }
       />
     </Form>
   );

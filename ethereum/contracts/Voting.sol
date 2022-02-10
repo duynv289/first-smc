@@ -37,22 +37,27 @@ contract Voting {
     uint256 public counter;
     mapping(address => bool) public allowed;
     mapping(address => bool) public voted;
+    mapping(address => bool) public withdrawed;
     uint256 timer;
+    uint256 timeVote = 7 * 24 * 60 * 60; // 1 week
+    uint256 amountDeposit = 100 * 1000000000000000000; // 100$
+    IERC20 erc20;
 
     function Voting() public {
         owner = msg.sender;
+        erc20 = IERC20(address(0xD9BA894E0097f8cC2BBc9D24D308b98e36dc6D02));
     }
 
     modifier restricted() {
-        require(allowed[msg.sender] || msg.sender == owner);
+        require(voted[msg.sender] || msg.sender == owner);
         _;
     }
 
-    function contribute(IERC20 erc20, uint256 amount) public {
+    function contribute() public {
         require(players.length < 3);
         require(!allowed[msg.sender]);
         allowed[msg.sender] = true;
-        erc20.transferFrom(msg.sender, address(this), amount);
+        erc20.transferFrom(msg.sender, address(this), amountDeposit);
         players.push(msg.sender);
         if (players.length == 3) {
             timer = block.timestamp;
@@ -60,7 +65,7 @@ contract Voting {
     }
 
     function voteScore(uint256 score) public {
-        require(block.timestamp - timer <= 7 * 24 * 60 * 60);
+        require(block.timestamp - timer <= timeVote);
         require(allowed[msg.sender]);
         require(!voted[msg.sender]);
         voted[msg.sender] = true;
@@ -68,32 +73,32 @@ contract Voting {
         counter++;
     }
 
-    function autoAddTimeUp() private {
-        counter += players.length - counter;
-        totalScore += (players.length - counter) * 10;
-    }
-
     function checkCounterTime() public view returns (uint256) {
-        if (7 * 24 * 60 * 60 > block.timestamp - timer) {
-            return 7 * 24 * 60 * 60 - (block.timestamp - timer);
+        if (timeVote > block.timestamp - timer) {
+            return timeVote - (block.timestamp - timer);
         } else {
             return 0;
         }
     }
 
-    function withdraw(IERC20 erc20, uint256 amount) public restricted {
-        erc20.transfer(msg.sender, amount);
+    function withdraw() public restricted returns (bool) {
+        require(checkCounterTime() == 0);
+        require(!withdrawed[msg.sender]);
+        uint256 avarageScore = getAvarageScore();
+        if (avarageScore >= 7 && msg.sender == owner) {
+            erc20.transfer(msg.sender, 3 * amountDeposit);
+            withdrawed[msg.sender] = true;
+            return true;
+        } else if (avarageScore < 7 && voted[msg.sender]) {
+            erc20.transfer(msg.sender, amountDeposit);
+            withdrawed[msg.sender] = true;
+            return true;
+        }
+        return false;
     }
 
-    function reset() public {
-        require(msg.sender == owner);
-        for (uint256 i = 0; i < 3; i++) {
-            allowed[players[i]] = false;
-            voted[players[i]] = false;
-        }
-        players = new address[](0);
-        totalScore = 0;
-        counter = 0;
+    function getAvarageScore() public view returns (uint256) {
+        return (totalScore + (3 - counter) * 10) / 3;
     }
 
     function getPlayers() public view returns (address[]) {

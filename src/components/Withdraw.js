@@ -1,58 +1,44 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Button, Form, Message } from 'semantic-ui-react';
 import web3 from '../web3';
 import voting from '../voting';
-import { usdtCompound } from '../erc20';
-import { useHistory } from 'react-router-dom';
 function Withdraw() {
   const [loading, setLoading] = useState(false);
-  const [canWithdraw, setCanWithdraw] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  let history = useHistory();
   const onWithdraw = async () => {
     const accounts = await web3.eth.getAccounts();
     const owner = await voting.methods.owner().call();
     setErrorMessage('');
     setLoading(true);
     try {
-      const amount = owner === accounts[0] ? '3' : '1';
-      console.log(amount);
-      await voting.methods
-        .withdraw(
-          usdtCompound.options.address,
-          web3.utils.toWei(amount, 'ether')
-        )
-        .send({
+      let isWin = false;
+      const avarageScore = await voting.methods.getAvarageScore().call();
+      console.log(avarageScore);
+      if (
+        (avarageScore >= 7 && owner === accounts[0]) ||
+        (avarageScore < 7 && owner !== accounts[0])
+      ) {
+        isWin = true;
+      }
+      if (isWin) {
+        const success = await voting.methods.withdraw().send({
           from: accounts[0],
         });
-      history.push('/');
+        if (success) {
+          alert('Withdraw success');
+        } else {
+          alert('Withdraw fail');
+        }
+      } else {
+        alert('You are not winner');
+      }
     } catch (err) {
       setErrorMessage(err.message);
     }
     setLoading(false);
   };
 
-  useEffect(() => {
-    async function getAvarageScore() {
-      const accounts = await web3.eth.getAccounts();
-      const owner = await await voting.methods.owner().call();
-      const players = await voting.methods.getPlayers().call();
-      let totalScore = await voting.methods.totalScore().call();
-      let counter = await voting.methods.counter().call();
-      totalScore =
-        parseFloat(totalScore) + parseFloat((players.length - counter) * 10);
-      const averageScore = parseFloat(totalScore / players.length);
-      if (averageScore >= 7) {
-        setCanWithdraw(owner === accounts[0]);
-      } else {
-        const isJoin = await voting.methods.allowed(accounts[0]).call();
-        setCanWithdraw(isJoin);
-      }
-    }
-    getAvarageScore();
-  }, []);
-
-  return canWithdraw ? (
+  return (
     <Form onSubmit={onWithdraw} error={!!errorMessage}>
       <Message info>
         <Message.Header>Time up</Message.Header>
@@ -62,19 +48,6 @@ function Withdraw() {
         Withdraw!
       </Button>
       <Message error header='Oops!' content={errorMessage} />
-    </Form>
-  ) : (
-    <Form
-      onSubmit={(event) => {
-        event.preventDefault();
-        history.push('/');
-      }}
-    >
-      <Message info>
-        <Message.Header>Game is ending</Message.Header>
-        <p>Please back to home</p>
-      </Message>
-      <Button primary>Back!</Button>
     </Form>
   );
 }

@@ -18,7 +18,7 @@ function Vote() {
       .checkCounterTime()
       .call()
       .then((timer) => {
-        setTimer(timer);
+        setTimer(parseInt(timer));
       });
   };
 
@@ -32,15 +32,15 @@ function Vote() {
     }
     prepair();
     getTimeCounter();
-  }, [history]);
+  }, []);
 
   useEffect(() => {
     let myInterval = setInterval(() => {
-      if (timer === 0) {
+      if (parseInt(timer) === 0) {
         clearInterval(myInterval);
         history.push('/withdraw');
-      } else if (timer > 0) {
-        setTimer(timer - 1);
+      } else if (parseInt(timer) > 0) {
+        setTimer(parseInt(timer) - 1);
       }
     }, 1000);
     return () => {
@@ -65,6 +65,7 @@ function Vote() {
   const onVote = async (event) => {
     event.preventDefault();
     const accounts = await web3.eth.getAccounts();
+    setErrorMessage('');
     setLoading(true);
     try {
       await voting.methods.voteScore(score).send({
@@ -91,7 +92,7 @@ function Vote() {
         </Message>
       )}
 
-      {!isVote ? (
+      {isJoin && !isVote ? (
         <Input
           placeholder='Score'
           value={score}
